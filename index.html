@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark" data-font="sans" data-width="standard">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Varoluşun Detaylı İncelemesi — İnteraktif Okuyucu</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Literata:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Progress Bar -->
+  <div id="read-progress-bar" class="read-progress-bar"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-icon"><i class="fa-solid fa-atom"></i></div>
+          <div class="brand-text">
+            <h2>Varoluşun İncelemesi</h2>
+            <span>Nazım Dugan &bull; 2020</span>
+          </div>
+        </div>
+        <button id="close-sidebar-btn" class="icon-btn mobile-only" aria-label="Menüyü Kapat">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Search Input -->
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="search-input" placeholder="Bölümlerde ve metinde ara..." autocomplete="off">
+        <button id="clear-search-btn" class="clear-btn hidden"><i class="fa-solid fa-circle-xmark"></i></button>
+      </div>
+
+      <!-- Global Reading Stats -->
+      <div class="global-stats">
+        <div class="stat-item">
+          <i class="fa-solid fa-book-open"></i>
+          <div>
+            <strong id="completed-count">0 / 16</strong>
+            <span>Tamamlandı</span>
+          </div>
+        </div>
+        <div class="stat-item">
+          <i class="fa-solid fa-clock"></i>
+          <div>
+            <strong id="total-time">~65 dk</strong>
+            <span>Toplam Süre</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chapter List -->
+      <nav class="chapter-nav">
+        <div class="nav-section-label">BÖLÜMLER</div>
+        <ul id="chapter-list" class="chapter-list">
+          <!-- Dynamically populated -->
+        </ul>
+      </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <button id="reset-progress-btn" class="footer-btn">
+          <i class="fa-solid fa-rotate-left"></i> Okuma İlerlemesini Sıfırla
+        </button>
+      </div>
+    </aside>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Control Bar -->
+      <header class="top-bar">
+        <div class="top-bar-left">
+          <button id="toggle-sidebar-btn" class="icon-btn" title="Menüyü Aç/Kapat">
+            <i class="fa-solid fa-bars-staggered"></i>
+          </button>
+          <div id="breadcrumbs" class="breadcrumbs">
+            <span class="bc-book">Varoluşun Detaylı İncelemesi</span>
+            <i class="fa-solid fa-chevron-right bc-sep"></i>
+            <span id="bc-title" class="bc-active">Yükleniyor...</span>
+          </div>
+        </div>
+
+        <div class="top-bar-right">
+          <a id="graph-link-btn" href="graph.html" class="action-btn" title="Kavram Haritası">
+            <i class="fa-solid fa-diagram-project"></i>
+            <span class="btn-text">Kavram Haritası</span>
+          </a>
+
+          <!-- Text Speech Synthesis Reader -->
+          <button id="tts-btn" class="action-btn tts-btn" title="Metni Sesli Oku">
+            <i class="fa-solid fa-volume-high"></i>
+            <span class="btn-text">Sesli Oku</span>
+          </button>
+
+          <!-- Language Switcher (For Chapters with EN) -->
+          <div id="lang-switch-wrapper" class="lang-switch-wrapper hidden">
+            <button id="lang-tr-btn" class="lang-btn active">TR</button>
+            <button id="lang-en-btn" class="lang-btn">EN</button>
+          </div>
+
+          <!-- Reader Customizer Toggle Button -->
+          <button id="toggle-settings-btn" class="icon-btn" title="Okuma Ayarları">
+            <i class="fa-solid fa-sliders"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Reader Settings Toolbar Drawer -->
+      <div id="settings-toolbar" class="settings-toolbar hidden">
+        <div class="setting-group">
+          <label><i class="fa-solid fa-palette"></i> Tema</label>
+          <div class="theme-options">
+            <button class="theme-btn active" data-set-theme="dark" title="Koyu Tema">
+              <span class="theme-preview dark"></span> Koyu
+            </button>
+            <button class="theme-btn" data-set-theme="light" title="Açık Tema">
+              <span class="theme-preview light"></span> Açık
+            </button>
+            <button class="theme-btn" data-set-theme="sepia" title="Sepya Tema">
+              <span class="theme-preview sepia"></span> Sepya
+            </button>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label><i class="fa-solid fa-font"></i> Yazı Tipi</label>
+          <div class="font-options">
+            <button class="font-btn active" data-set-font="sans">Sans</button>
+            <button class="font-btn" data-set-font="serif">Serif</button>
+            <button class="font-btn" data-set-font="mono">Mono</button>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label><i class="fa-solid fa-text-height"></i> Yazı Boyutu</label>
+          <div class="size-options">
+            <button id="font-decrease-btn" class="size-btn" title="Küçült"><i class="fa-solid fa-minus"></i></button>
+            <span id="font-size-label">18px</span>
+            <button id="font-increase-btn" class="size-btn" title="Büyüt"><i class="fa-solid fa-plus"></i></button>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label><i class="fa-solid fa-arrows-left-right"></i> Genişlik</label>
+          <div class="width-options">
+            <button class="width-btn" data-set-width="compact">Dar</button>
+            <button class="width-btn active" data-set-width="standard">Normal</button>
+            <button class="width-btn" data-set-width="wide">Geniş</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reader Article Canvas -->
+      <div class="reader-container">
+        <!-- Core Concepts Side Pane -->
+        <aside id="concepts-pane" class="concepts-pane">
+          <div class="concepts-pane-inner">
+            <div class="concepts-pane-header">
+              <i class="fa-solid fa-lightbulb"></i>
+              <span id="concepts-header-title">Temel Kavramlar</span>
+            </div>
+            <ul id="concepts-list" class="concepts-list">
+              <!-- Concept items injected by app.js -->
+            </ul>
+          </div>
+        </aside>
+
+        <article id="article-view" class="article-view">
+          <!-- Article Header -->
+          <header class="article-header">
+            <div class="article-meta-badges">
+              <span id="art-chapter-num" class="badge badge-num">Bölüm 01</span>
+              <span id="art-pages-badge" class="badge badge-pages"><i class="fa-regular fa-file-pdf"></i> Sayfa 3 - 4</span>
+              <span id="art-time-badge" class="badge badge-time"><i class="fa-regular fa-clock"></i> 2 dk okuma</span>
+              <span id="art-lang-badge" class="badge badge-lang hidden"><i class="fa-solid fa-language"></i> EN Mevcut</span>
+            </div>
+
+            <h1 id="art-title" class="art-title">Önsöz</h1>
+            <p id="art-subtitle" class="art-subtitle">Giriş ve Sunuş</p>
+          </header>
+
+          <hr class="art-divider">
+
+          <!-- Article Body -->
+          <div id="art-body" class="art-body">
+            <!-- Paragraphs rendered here -->
+          </div>
+
+          <!-- Chapter End Footer & Navigation -->
+          <footer class="article-footer">
+            <div class="mark-complete-wrapper">
+              <button id="mark-complete-btn" class="mark-complete-btn">
+                <i class="fa-regular fa-circle-check"></i> <span>Bu Bölümü Okundu Olarak İşaretle</span>
+              </button>
+            </div>
+
+            <nav class="bottom-chapter-nav">
+              <button id="prev-chapter-btn" class="nav-card prev-card">
+                <span class="nav-dir"><i class="fa-solid fa-arrow-left"></i> Önceki Bölüm</span>
+                <span id="prev-title" class="nav-card-title">Kapak ve İçindekiler</span>
+              </button>
+              
+              <button id="next-chapter-btn" class="nav-card next-card">
+                <span class="nav-dir">Sonraki Bölüm <i class="fa-solid fa-arrow-right"></i></span>
+                <span id="next-title" class="nav-card-title">Var Olma Stratejileri Üzerine</span>
+              </button>
+            </nav>
+          </footer>
+        </article>
+      </div>
+    </main>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="graph.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
