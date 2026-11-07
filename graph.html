@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kavram Haritası — Varoluşun Detaylı İncelemesi</title>
+<style>
+:root{--bg:#0B0F19;--panel:#111827;--card:#1E293B;--text:#F8FAFC;--muted:#94A3B8;--line:#334155;--accent:#6366F1;--edge:#64748B}
+[data-theme=light]{--bg:#F8FAFC;--panel:#FFFFFF;--card:#F1F5F9;--text:#0F172A;--muted:#64748B;--line:#CBD5E1;--edge:#94A3B8}
+[data-theme=sepia]{--bg:#F4ECD8;--panel:#FBF5E6;--card:#EADFC4;--text:#433422;--muted:#7A6A55;--line:#CDBF9F;--edge:#A8977a}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:14px/1.5 Inter,system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;gap:10px;align-items:center;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+header h1{font-size:15px;margin:0 8px 0 0;white-space:nowrap}
+input,button,a.btn{font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px 10px;text-decoration:none;cursor:pointer;transition:background .15s, border-color .15s}
+input{cursor:text;min-width:180px;flex:1;max-width:300px}
+button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+button:hover,a.btn:hover{border-color:var(--accent)}
+.spacer{flex:1}
+#legend{display:flex;gap:6px;flex-wrap:wrap;padding:6px 14px;background:var(--panel);border-bottom:1px solid var(--line);align-items:center;font-size:12px;color:var(--muted);transition:opacity .2s ease}
+#legend.collapsed{display:none}
+.chip{display:inline-flex;gap:6px;align-items:center;padding:2px 9px;border-radius:99px;border:1px solid var(--line);cursor:pointer;color:var(--text);background:var(--card);transition:opacity .15s, transform .15s, border-color .15s}
+.chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.chip.off{opacity:.35}
+.chip:hover{border-color:var(--accent)}
+#zoom-controls{position:absolute;right:14px;bottom:14px;display:flex;flex-direction:column;gap:6px;z-index:15}
+#zoom-controls button{width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--card);border:1px solid var(--line);border-radius:8px;color:var(--text);font-size:16px;font-weight:600;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,0.3);transition:background .15s, border-color .15s, transform .15s;user-select:none}
+#zoom-controls button:active{transform:scale(0.92)}
+#zoom-controls button:hover{border-color:var(--accent)}
+.panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.close-panel-btn{background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0 6px;line-height:1;border-radius:4px}
+.close-panel-btn:hover{color:var(--text);background:var(--card)}
+#tip{position:absolute;left:12px;bottom:10px;font-size:11px;color:var(--muted);pointer-events:none;background:var(--card);padding:4px 8px;border-radius:6px;border:1px solid var(--line);opacity:.88;z-index:10}
+main{flex:1;display:flex;min-height:0}
+#stage{flex:1;position:relative;min-width:0}
+svg{width:100%;height:100%;display:block;touch-action:none;cursor:grab;transform-origin:0 0;will-change:transform;backface-visibility:hidden}
+#stage{overflow:hidden;contain:layout paint}
+svg:active{cursor:grabbing}
+
+/* Cluster Hulls & Badges */
+.cluster-hull{fill-opacity:0.07;stroke-width:1.5;stroke-dasharray:6 5;stroke-linecap:round;stroke-linejoin:round;transition:fill-opacity .25s ease, stroke-opacity .25s ease, stroke-width .25s ease;cursor:pointer}
+.cluster-hull:hover,.cluster-hull.highlight{fill-opacity:0.18;stroke-opacity:0.85;stroke-width:2.2}
+.cluster-hull.dim{opacity:0.12}
+
+.cluster-badge{cursor:pointer;user-select:none;transition:opacity .18s ease}
+.cluster-badge rect{fill:var(--card);stroke:var(--line);stroke-width:1.2;rx:12px;transition:stroke-width .18s ease}
+.cluster-badge:hover rect,.cluster-badge.highlight rect{stroke-width:2.4px !important}
+.cluster-badge text{font-size:11px;font-weight:600;letter-spacing:.02em;fill:var(--text);paint-order:stroke fill;stroke:var(--card);stroke-width:2px;pointer-events:none}
+.cluster-badge circle{pointer-events:none}
+.cluster-badge.dim{opacity:0.18}
+
+/* Edges */
+.edge{stroke:var(--edge);stroke-width:1.3;fill:none;transition:stroke-opacity .2s, stroke-width .2s, opacity .2s}
+.edge.analogy{stroke-dasharray:5 4}
+.edge.contrast{stroke-dasharray:1.5 4;stroke-linecap:round;stroke-width:2}
+.edge.inferred{opacity:.55}
+.edge.intra-group{stroke-width:1.4;opacity:0.55}
+.edge.inter-group{stroke-width:1.1;opacity:0.22;stroke-dasharray:4 3}
+.edge.inter-group.analogy{stroke-dasharray:6 4}
+.edge.inter-group.contrast{stroke-dasharray:2 4}
+.edge.highlighted{opacity:1 !important;stroke-width:2.4 !important;stroke:var(--text) !important}
+
+/* Nodes */
+.node{cursor:pointer}
+.node circle{stroke:var(--bg);stroke-width:2;transition:transform .15s, stroke-width .15s}
+.node:hover circle{stroke-width:3}
+.node text{font-size:10.5px;font-weight:500;fill:var(--text);text-anchor:middle;paint-order:stroke fill;stroke:var(--bg);stroke-width:3.5px;stroke-linejoin:round;pointer-events:none}
+.node.sel circle{stroke:var(--text);stroke-width:3.5}
+.dim{opacity:.12}
+.hide{display:none}
+
+/* Side Panel */
+aside{width:340px;background:var(--panel);border-left:1px solid var(--line);overflow:auto;padding:16px}
+aside h2{margin:0 0 4px;font-size:18px}
+aside h3{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:16px 0 6px}
+.badge{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;color:#fff}
+.sum{margin:10px 0;line-height:1.45}
+.item{display:block;width:100%;text-align:left;margin:0 0 6px;padding:6px 9px;background:var(--card);border:1px solid var(--line);border-radius:8px;color:var(--text);text-decoration:none;cursor:pointer}
+.item small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:2px}
+.item:hover{border-color:var(--accent)}
+.q{color:#F59E0B;font-size:11px}
+.hint{color:var(--muted);font-size:13px}
+
+@media(max-width:760px){
+  header{padding:6px 10px;gap:6px}
+  header h1{font-size:14px}
+  input{min-width:110px;max-width:160px;font-size:12px;padding:4px 8px}
+  input,button,a.btn{padding:4px 8px;font-size:12px}
+  #legend:not(.collapsed){max-height:180px;overflow-y:auto;box-shadow:0 8px 16px rgba(0,0,0,0.4);z-index:25;position:relative}
+  #zoom-controls{right:10px;bottom:10px}
+  #zoom-controls button{width:32px;height:32px;font-size:14px}
+  #tip{font-size:10px;padding:3px 6px;left:8px;bottom:8px}
+  main{flex-direction:column}
+  aside{width:100%;height:45%;border-left:0;border-top:1px solid var(--line);padding:12px}
+  aside h2{font-size:16px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="ttl"></h1>
+  <input id="q" type="search" autocomplete="off">
+  <button id="btn-legend-toggle" class="btn" title=""><span id="legend-toggle-icon">🏷️</span> <span id="legend-toggle-text"></span></button>
+  <button id="btn-recluster"></button>
+  <button id="btn-fit"></button>
+  <span class="spacer"></span>
+  <button id="l-tr">TR</button><button id="l-en">EN</button>
+  <a class="btn" id="reader" href="index.html"></a>
+</header>
+<div id="legend"></div>
+<main>
+  <div id="stage">
+    <svg id="svg">
+      <defs><marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L8,4L0,8z" style="fill:var(--edge)"/></marker></defs>
+      <g id="view">
+        <g id="H"></g>
+        <g id="E"></g>
+        <g id="N"></g>
+        <g id="B"></g>
+      </g>
+    </svg>
+    <div id="zoom-controls">
+      <button id="btn-zoom-in" title="Yakınlaştır">+</button>
+      <button id="btn-zoom-out" title="Uzaklaştır">−</button>
+      <button id="btn-zoom-fit" title="Sığdır">⛶</button>
+    </div>
+    <div id="tip"></div>
+  </div>
+  <aside id="panel"></aside>
+</main>
+
+<script src="data.js"></script>
+<script src="graph.js"></script>
+<script>
+(function(){
+const D = window.BOOK_DATA, G = window.BOOK_GRAPH;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const NS = 'http://www.w3.org/2000/svg';
+const mk = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+
+document.documentElement.dataset.theme = localStorage.getItem('varolus_theme') || 'dark';
+let lang = localStorage.getItem('varolus_graph_lang') === 'en' ? 'en' : 'tr';
+
+const UI = {
+  tr: {
+    title: 'Kavram Haritası', search: 'Kavram ara…', reader: '← Okuyucu',
+    recluster: '🎯 Kümeleri Grupla', fit: '⛶ Sığdır',
+    legendToggle: 'Kümeler', legendToggleTitle: 'Küme menüsünü göster/gizle',
+    zoomIn: 'Yakınlaştır', zoomOut: 'Uzaklaştır', zoomFit: 'Tümünü Sığdır', close: 'Kapat',
+    tip: 'Sürükle: kaydır · Tekerlek: yakınlaştır · Düğüm / Küme Başlığı: seç',
+    tipTouch: 'İki parmak: yakınlaştır · Sürükle: kaydır · Dokun: seç',
+    empty: 'Bir kavram veya küme seçin; bağlantıları ve geçtiği paragraflar burada görünür.',
+    appears: 'Kitapta geçtiği yerler', mention: 'geçtiği yer', inferred: 'taslak yorum — gözden geçirilmeli',
+    cross: 'bölüm atfı', stats: (n,e)=>`${n} kavram · ${e} bağlantı`,
+    s: { bo: 'Dayandığı kavramlar', bi: 'Üzerine kurulanlar', eo: 'Örneği olduğu', ei: 'Örnekleri', an: 'Benzer fikirler', co: 'Karşıt kavramlar' },
+    legend: '→ dayanır / örnek · kesikli: benzer fikir · noktalı: karşıt'
+  },
+  en: {
+    title: 'Concept Map', search: 'Search concepts…', reader: '← Reader',
+    recluster: '🎯 Group Clusters', fit: '⛶ Fit View',
+    legendToggle: 'Groups', legendToggleTitle: 'Toggle groups menu',
+    zoomIn: 'Zoom in', zoomOut: 'Zoom out', zoomFit: 'Fit view', close: 'Close',
+    tip: 'Drag: pan · Wheel: zoom · Node / Cluster Header: select',
+    tipTouch: 'Pinch: zoom · Drag: pan · Tap: select',
+    empty: 'Select a concept or cluster to see its links and relevant passages.',
+    appears: 'Where it appears', mention: 'mention', inferred: 'draft reading — needs review',
+    cross: 'chapter cross-reference', stats: (n,e)=>`${n} concepts · ${e} links`,
+    s: { bo: 'Builds on', bi: 'Built on by', eo: 'Is an example of', ei: 'Examples', an: 'Analogous ideas', co: 'Contrasts with' },
+    legend: '→ builds on / example · dashed: analogy · dotted: contrast'
+  }
+};
+const t = () => UI[lang];
+const nm = n => lang === 'en' ? n.en : n.tr;
+const chap = id => D.find(c => String(c.id) === id);
+const chTitle = id => { const c = chap(id); return c ? (lang === 'en' && c.titleEn ? c.titleEn : c.title) : id; };
+
+// ---------- model & cluster anchors ----------
+// Coherent intellectual ring layout around the center:
+const ringGroups = ['physics', 'system', 'persist', 'society', 'mind', 'math'];
+const R = 640;
+ringGroups.forEach((k, i) => {
+  const a = -Math.PI / 2 + (i * Math.PI * 2) / ringGroups.length;
+  if (G.groups[k]) {
+    G.groups[k].ax = Math.round(Math.cos(a) * R);
+    G.groups[k].ay = Math.round(Math.sin(a) * R);
+  }
+});
+// Place the preface / meta hub in the center:
+if (G.groups.meta) {
+  G.groups.meta.ax = 0;
+  G.groups.meta.ay = -30;
+}
+
+const nodes = G.nodes.map(n => Object.assign({}, n, {
+  r: 6 + Math.sqrt(n.degree) * 2.6,
+  x: 0, y: 0, vx: 0, vy: 0, fx: null, fy: null
+}));
+const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+const edges = G.edges.map(e => {
+  const s = byId[e.source], t = byId[e.target];
+  const isInterGroup = s.group !== t.group;
+  return Object.assign({}, e, { s, t, isInterGroup });
+});
+const gKeys = Object.keys(G.groups);
+const hiddenG = new Set();
+let selected = null, hover = null, groupHover = null, matches = null;
+
+// Initialize nodes clustered near their respective group anchor:
+function initPositions() {
+  nodes.forEach(n => {
+    const g = G.groups[n.group];
+    n.x = g.ax + (Math.random() - 0.5) * 160;
+    n.y = g.ay + (Math.random() - 0.5) * 160;
+    n.vx = 0; n.vy = 0;
+  });
+}
+initPositions();
+
+// ---------- multi-factor physics layout ----------
+let alpha = 1, raf = 0;
+function tick() {
+  const a = alpha, N = nodes.length;
+
+  // 1. Repulsion between all nodes + extra boundary repulsion between distinct groups
+  for (let i = 0; i < N; i++) {
+    const p = nodes[i];
+    for (let j = i + 1; j < N; j++) {
+      const q = nodes[j];
+      let dx = q.x - p.x, dy = q.y - p.y;
+      let d2 = dx * dx + dy * dy || 1;
+      const d = Math.sqrt(d2);
+      const sameGroup = p.group === q.group;
+      const min = p.r + q.r + (sameGroup ? 34 : 50);
+
+      let f = (sameGroup ? 4800 : 7500) * a / d2;
+      if (d < min) {
+        f += (min - d) * (sameGroup ? 0.12 : 0.22);
+      }
+      if (!sameGroup && d < 260) {
+        f += (260 - d) * 0.025 * a;
+      }
+
+      dx /= d; dy /= d;
+      p.vx -= dx * f; p.vy -= dy * f;
+      q.vx += dx * f; q.vy += dy * f;
+    }
+  }
+
+  // 2. Edge forces (compact intra-group springs, gentle cross-cluster bridges)
+  for (const e of edges) {
+    const p = e.s, q = e.t;
+    let dx = q.x - p.x, dy = q.y - p.y;
+    const d = Math.sqrt(dx * dx + dy * dy) || 1;
+    dx /= d; dy /= d;
+
+    if (p.group === q.group) {
+      const targetD = 78 + p.r + q.r;
+      const f = (d - targetD) * 0.04 * a * 3;
+      p.vx += dx * f; p.vy += dy * f;
+      q.vx -= dx * f; q.vy -= dy * f;
+    } else {
+      const targetD = 340 + p.r + q.r;
+      const f = (d - targetD) * 0.005 * a * 3;
+      p.vx += dx * f; p.vy += dy * f;
+      q.vx -= dx * f; q.vy -= dy * f;
+    }
+  }
+
+  // 3. Group center gravity & damping
+  for (const n of nodes) {
+    const g = G.groups[n.group];
+    n.vx += (g.ax - n.x) * 0.032 * a;
+    n.vy += (g.ay - n.y) * 0.032 * a;
+
+    if (n.fx !== null) {
+      n.x = n.fx; n.y = n.fy; n.vx = 0; n.vy = 0;
+    } else {
+      n.vx *= 0.78; n.vy *= 0.78;
+      n.x += n.vx; n.y += n.vy;
+    }
+  }
+
+  alpha *= 0.985;
+}
+
+function frame() { raf = 0; if (alpha > 0.015) { tick(); draw(); raf = requestAnimationFrame(frame); } }
+function run(a) { alpha = Math.max(alpha, a); if (!raf) raf = requestAnimationFrame(frame); }
+
+// Settle initial positions cleanly:
+for (let i = 0; i < 360; i++) tick();
+alpha = 0.01;
+
+// ---------- geometry helpers: convex hull & smooth hulls ----------
+function getConvexHull(pts) {
+  if (pts.length <= 2) return pts.slice();
+  const sorted = pts.slice().sort((a, b) => a.x === b.x ? a.y - b.y : a.x - b.x);
+  const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lower = [];
+  for (const p of sorted) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+    lower.push(p);
+  }
+  const upper = [];
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    const p = sorted[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+    upper.push(p);
+  }
+  lower.pop();
+  upper.pop();
+  return lower.concat(upper);
+}
+
+function computeHullAndBadge(gNodes) {
+  if (gNodes.length === 1) {
+    const p = gNodes[0], r = p.r + 42;
+    const pathD = `M ${p.x - r},${p.y} A ${r},${r} 0 1,0 ${p.x + r},${p.y} A ${r},${r} 0 1,0 ${p.x - r},${p.y} Z`;
+    return { pathD, badgeX: p.x, badgeY: p.y - r - 12 };
+  }
+
+  if (gNodes.length === 2) {
+    const [a, b] = gNodes;
+    const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+    const r = Math.max(a.r, b.r) + 40;
+    const nx = (-dy / len) * r, ny = (dx / len) * r;
+    const pathD = `M ${a.x + nx},${a.y + ny} L ${b.x + nx},${b.y + ny} A ${r},${r} 0 0,1 ${b.x - nx},${b.y - ny} L ${a.x - nx},${a.y - ny} A ${r},${r} 0 0,1 ${a.x + nx},${a.y + ny} Z`;
+    const cx = (a.x + b.x) / 2, minY = Math.min(a.y, b.y) - r;
+    return { pathD, badgeX: cx, badgeY: minY - 12 };
+  }
+
+  // 3+ nodes: convex hull + radial expansion + smooth bezier midpoints
+  const hull = getConvexHull(gNodes);
+  let cx = 0, cy = 0;
+  for (const p of gNodes) { cx += p.x; cy += p.y; }
+  cx /= gNodes.length; cy /= gNodes.length;
+
+  const padded = hull.map(p => {
+    const dx = p.x - cx, dy = p.y - cy;
+    const dist = Math.hypot(dx, dy) || 1;
+    const pad = 38 + (p.r || 10);
+    return { x: p.x + (dx / dist) * pad, y: p.y + (dy / dist) * pad };
+  });
+
+  const n = padded.length;
+  let pathD = '';
+  if (n >= 3) {
+    for (let i = 0; i < n; i++) {
+      const p1 = padded[i];
+      const p2 = padded[(i + 1) % n];
+      const mx = (p1.x + p2.x) / 2;
+      const my = (p1.y + p2.y) / 2;
+      if (i === 0) pathD += `M ${mx},${my} `;
+      const nextP = padded[(i + 2) % n];
+      const nextMidX = (p2.x + nextP.x) / 2;
+      const nextMidY = (p2.y + nextP.y) / 2;
+      pathD += `Q ${p2.x},${p2.y} ${nextMidX},${nextMidY} `;
+    }
+    pathD += 'Z';
+  }
+
+  let minY = 1e9;
+  for (const p of padded) { if (p.y < minY) minY = p.y; }
+
+  return { pathD, badgeX: cx, badgeY: minY - 14 };
+}
+
+// ---------- DOM Elements ----------
+const gH = $('H'), gE = $('E'), gN = $('N'), gB = $('B'), svg = $('svg'), view = { x: 0, y: 0, k: 1 };
+
+// Cluster Hulls
+const hulls = {};
+gKeys.forEach(k => {
+  const g = G.groups[k];
+  const el = mk('path', {
+    class: 'cluster-hull',
+    'data-group': k,
+    fill: g.color,
+    stroke: g.color
+  }, gH);
+  el.addEventListener('mouseenter', () => { groupHover = k; refresh(); });
+  el.addEventListener('mouseleave', () => { groupHover = null; refresh(); });
+  el.addEventListener('click', (e) => { e.stopPropagation(); focusCluster(k); });
+  hulls[k] = el;
+});
+
+// Edges
+edges.forEach(e => {
+  const cls = 'edge ' + e.type + (e.origin === 'inferred' ? ' inferred' : '') + (e.isInterGroup ? ' inter-group' : ' intra-group');
+  e.el = mk('line', { class: cls }, gE);
+  if (!e.isInterGroup) {
+    e.el.style.stroke = G.groups[e.s.group].color;
+  }
+  if (e.type === 'builds-on' || e.type === 'example-of') {
+    e.el.setAttribute('marker-end', 'url(#arr)');
+  }
+});
+
+// Nodes
+nodes.forEach(n => {
+  n.el = mk('g', { class: 'node', 'data-id': n.id }, gN);
+  mk('circle', { r: n.r, fill: G.groups[n.group].color }, n.el);
+  n.txt = mk('text', { y: n.r + 12 }, n.el);
+});
+
+// Cluster Badges (Headers)
+const badges = {};
+gKeys.forEach(k => {
+  const g = G.groups[k];
+  const el = mk('g', { class: 'cluster-badge', 'data-group': k }, gB);
+  const rect = mk('rect', {}, el);
+  const dot = mk('circle', { r: 4.5, fill: g.color }, el);
+  const txt = mk('text', { 'text-anchor': 'middle' }, el);
+  el.addEventListener('mouseenter', () => { groupHover = k; refresh(); });
+  el.addEventListener('mouseleave', () => { groupHover = null; refresh(); });
+  el.addEventListener('click', (e) => { e.stopPropagation(); focusCluster(k); });
+  badges[k] = { el, rect, dot, txt };
+});
+
+function draw() {
+  // 1. Edges
+  for (const e of edges) {
+    const p = e.s, q = e.t;
+    let dx = q.x - p.x, dy = q.y - p.y;
+    const d = Math.sqrt(dx * dx + dy * dy) || 1;
+    dx /= d; dy /= d;
+    const arrow = e.type === 'builds-on' || e.type === 'example-of';
+    e.el.setAttribute('x1', p.x + dx * p.r);
+    e.el.setAttribute('y1', p.y + dy * p.r);
+    e.el.setAttribute('x2', q.x - dx * (q.r + (arrow ? 2 : 0)));
+    e.el.setAttribute('y2', q.y - dy * (q.r + (arrow ? 2 : 0)));
+  }
+
+  // 2. Nodes
+  for (const n of nodes) {
+    n.el.setAttribute('transform', `translate(${n.x},${n.y})`);
+  }
+
+  // 3. Cluster Hulls & Badges
+  for (const k of gKeys) {
+    const gNodes = nodes.filter(n => n.group === k && !hiddenG.has(k));
+    const hullEl = hulls[k];
+    const badge = badges[k];
+
+    if (gNodes.length === 0 || hiddenG.has(k)) {
+      if (hullEl) hullEl.setAttribute('d', '');
+      if (badge) badge.el.style.display = 'none';
+      continue;
+    }
+    if (badge) badge.el.style.display = '';
+
+    const { pathD, badgeX, badgeY } = computeHullAndBadge(gNodes);
+    if (hullEl) hullEl.setAttribute('d', pathD);
+    if (badge) badge.el.setAttribute('transform', `translate(${badgeX},${badgeY})`);
+  }
+}
+
+// Zoom/pan is done with a CSS transform on the <svg> layer (handled by the GPU compositor,
+// no re-rasterising). Once the gesture settles, the real SVG transform is committed so it is crisp again.
+const committed = { x: 0, y: 0, k: 1 };
+let commitTimer = 0;
+function commitView() {
+  commitTimer = 0;
+  committed.x = view.x; committed.y = view.y; committed.k = view.k;
+  $('view').setAttribute('transform', `translate(${view.x},${view.y}) scale(${view.k})`);
+  svg.style.transform = '';
+}
+function applyView() {
+  const s = view.k / committed.k;
+  const tx = view.x - committed.x * s, ty = view.y - committed.y * s;
+  svg.style.transform = `translate3d(${tx}px,${ty}px,0) scale(${s})`;
+  clearTimeout(commitTimer);
+  commitTimer = setTimeout(commitView, 140);
+}
+
+function fit(immediate) {
+  const w = svg.clientWidth || (window.innerWidth - 340), h = svg.clientHeight || (window.innerHeight - 80);
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  for (const n of nodes) {
+    if (hiddenG.has(n.group)) continue;
+    x0 = Math.min(x0, n.x - 70); x1 = Math.max(x1, n.x + 70);
+    y0 = Math.min(y0, n.y - 50); y1 = Math.max(y1, n.y + 50);
+  }
+  if (x0 > x1) { x0 = -500; x1 = 500; y0 = -500; y1 = 500; }
+  const pad = 65;
+  const kw = (w - pad * 2) / (x1 - x0);
+  const kh = (h - pad * 2) / (y1 - y0);
+  const targetK = Math.min(Math.max(Math.min(kw, kh), 0.2), 1.25);
+  const targetX = w / 2 - ((x0 + x1) / 2) * targetK;
+  const targetY = h / 2 - ((y0 + y1) / 2) * targetK;
+  if (immediate) {
+    if (viewAnim) cancelAnimationFrame(viewAnim);
+    view.x = targetX; view.y = targetY; view.k = targetK;
+    applyView();
+  } else {
+    animateView(targetX, targetY, targetK);
+  }
+}
+
+let viewAnim = null;
+function animateView(tx, ty, tk) {
+  if (viewAnim) cancelAnimationFrame(viewAnim);
+  const sx = view.x, sy = view.y, sk = view.k;
+  const start = performance.now(), duration = 320;
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    view.x = sx + (tx - sx) * ease;
+    view.y = sy + (ty - sy) * ease;
+    view.k = sk + (tk - sk) * ease;
+    applyView();
+    if (t < 1) viewAnim = requestAnimationFrame(step);
+    else viewAnim = null;
+  }
+  viewAnim = requestAnimationFrame(step);
+}
+
+function focusCluster(k) {
+  const gNodes = nodes.filter(n => n.group === k && !hiddenG.has(k));
+  if (!gNodes.length) return;
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  for (const n of gNodes) {
+    x0 = Math.min(x0, n.x - 80); x1 = Math.max(x1, n.x + 80);
+    y0 = Math.min(y0, n.y - 70); y1 = Math.max(y1, n.y + 70);
+  }
+  const w = svg.clientWidth, h = svg.clientHeight;
+  const kw = (w - 120) / (x1 - x0);
+  const kh = (h - 120) / (y1 - y0);
+  const targetK = Math.min(Math.max(Math.min(kw, kh), 0.4), 1.6);
+  const targetX = w / 2 - ((x0 + x1) / 2) * targetK;
+  const targetY = h / 2 - ((y0 + y1) / 2) * targetK;
+  animateView(targetX, targetY, targetK);
+}
+
+function recluster() {
+  initPositions();
+  alpha = 1;
+  for (let i = 0; i < 360; i++) tick();
+  alpha = 0.01;
+  draw();
+  fit();
+}
+
+function focusSet() {
+  const f = hover || selected; if (!f) return null;
+  const s = new Set([f]); edges.forEach(e => { if (e.source === f) s.add(e.target); if (e.target === f) s.add(e.source); }); return s;
+}
+
+function refresh() {
+  const fs = focusSet(), f = hover || selected;
+  for (const n of nodes) {
+    const vis = !hiddenG.has(n.group);
+    n.el.classList.toggle('hide', !vis);
+    let dim = false;
+    if (fs && !fs.has(n.id)) dim = true;
+    if (matches && !matches.has(n.id)) dim = true;
+    if (groupHover && n.group !== groupHover && (!fs || !fs.has(n.id))) dim = true;
+    n.el.classList.toggle('dim', dim);
+    n.el.classList.toggle('sel', n.id === selected);
+  }
+
+  for (const e of edges) {
+    const hide = hiddenG.has(e.s.group) || hiddenG.has(e.t.group);
+    e.el.classList.toggle('hide', hide);
+    const incidentToFocus = f && (e.source === f || e.target === f);
+    let dim = false;
+    if (f && !incidentToFocus) dim = true;
+    if (matches && !(matches.has(e.source) && matches.has(e.target))) dim = true;
+    if (groupHover && e.s.group !== groupHover && e.t.group !== groupHover && !incidentToFocus) dim = true;
+
+    e.el.classList.toggle('dim', dim);
+    e.el.classList.toggle('highlighted', incidentToFocus);
+  }
+
+  for (const k of gKeys) {
+    const h = hulls[k], b = badges[k];
+    if (!h) continue;
+    const isGroupActive = groupHover === k;
+    const isGroupDim = (groupHover && groupHover !== k) || (selected && byId[selected] && byId[selected].group !== k);
+    h.classList.toggle('highlight', isGroupActive);
+    h.classList.toggle('dim', isGroupDim && !isGroupActive);
+    if (b) {
+      b.el.classList.toggle('highlight', isGroupActive);
+      b.el.classList.toggle('dim', isGroupDim && !isGroupActive);
+    }
+  }
+}
+
+// ---------- panel ----------
+function panel() {
+  const P = $('panel'), n = selected && byId[selected];
+  if (!n) { P.innerHTML = `<p class="hint">${t().empty}</p>`; return; }
+  const g = G.groups[n.group], u = t();
+  const nb = (id, why, origin) => { const m = byId[id]; return `<button class="item" data-go="${id}">${esc(nm(m))}<small>${esc(why)}${origin === 'inferred' ? ` <span class="q">● ${u.inferred}</span>` : ''}</small></button>`; };
+  const sec = (key, arr) => arr.length ? `<h3>${u.s[key]} (${arr.length})</h3>` + arr.join('') : '';
+  const why = e => lang === 'en' ? e.whyEn : e.whyTr;
+  const out = ty => edges.filter(e => e.source === n.id && e.type === ty).map(e => nb(e.target, why(e), e.origin));
+  const inn = ty => edges.filter(e => e.target === n.id && e.type === ty).map(e => nb(e.source, why(e), e.origin));
+  const both = ty => edges.filter(e => e.type === ty && (e.source === n.id || e.target === n.id)).map(e => nb(e.source === n.id ? e.target : e.source, why(e), e.origin));
+  const apps = n.appearances.map(a => {
+    const p = lang === 'en' ? a.paraEn : a.para;
+    const lab = a.kind === 'concept' ? (lang === 'en' ? a.labelEn : a.labelTr) : u.mention;
+    return `<a class="item" href="index.html#ch=${a.ch}&p=${p}&lang=${lang}">${esc(chTitle(a.ch))}<small>${esc(lab)} · ¶${p + 1}</small></a>`;
+  }).join('');
+  P.innerHTML = `<div class="panel-head">
+      <h2>${esc(nm(n))}</h2>
+      <button type="button" class="close-panel-btn" id="close-panel-btn" title="${esc(u.close)}">✕</button>
+    </div>
+    <span class="badge" style="background:${g.color}">${esc(lang === 'en' ? g.en : g.tr)}</span>
+    <p class="sum">${esc(lang === 'en' ? n.summaryEn : n.summaryTr)}</p>
+    <h3>${u.appears}</h3>${apps}
+    ${sec('bo', out('builds-on'))}${sec('bi', inn('builds-on'))}${sec('eo', out('example-of'))}${sec('ei', inn('example-of'))}${sec('an', both('analogy'))}${sec('co', both('contrast'))}`;
+  P.scrollTop = 0;
+}
+
+function select(id, center) {
+  selected = id; refresh(); panel();
+  history.replaceState(null, '', id ? '#node=' + id : location.pathname);
+  if (id && center) {
+    const n = byId[id];
+    animateView(svg.clientWidth / 2 - n.x * view.k, svg.clientHeight / 2 - n.y * view.k, view.k);
+  }
+}
+
+// ---------- interaction (touch pinch-zoom, multi-pointer, pan & controls) ----------
+const world = e => { const r = $('stage').getBoundingClientRect(); return { x: (e.clientX - r.left - view.x) / view.k, y: (e.clientY - r.top - view.y) / view.k }; };
+const pointers = new Map();
+let pinchStart = null;
+let drag = null;
+
+svg.addEventListener('pointerdown', e => {
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  try { svg.setPointerCapture(e.pointerId); } catch(err) {}
+
+  if (pointers.size === 1) {
+    const g = e.target.closest('.node');
+    drag = {
+      node: g ? byId[g.dataset.id] : null,
+      sx: e.clientX,
+      sy: e.clientY,
+      vx: view.x,
+      vy: view.y,
+      moved: false
+    };
+  } else if (pointers.size === 2) {
+    // 2-finger gesture starts -> cancel node dragging and begin pinch-zoom
+    if (drag && drag.node) {
+      drag.node.fx = null;
+      drag.node.fy = null;
+    }
+    drag = null;
+
+    const pts = Array.from(pointers.values());
+    const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+    const midX = (pts[0].x + pts[1].x) / 2;
+    const midY = (pts[0].y + pts[1].y) / 2;
+    const r = $('stage').getBoundingClientRect();
+    pinchStart = {
+      dist,
+      startK: view.k,
+      worldMid: {
+        x: (midX - r.left - view.x) / view.k,
+        y: (midY - r.top - view.y) / view.k
+      }
+    };
+  }
+});
+
+svg.addEventListener('pointermove', e => {
+  if (!pointers.has(e.pointerId)) return;
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+  // Two-finger pinch to zoom & pan simultaneously
+  if (pointers.size === 2 && pinchStart) {
+    const pts = Array.from(pointers.values());
+    const newDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+    const midX = (pts[0].x + pts[1].x) / 2;
+    const midY = (pts[0].y + pts[1].y) / 2;
+    const scale = newDist / pinchStart.dist;
+    const newK = Math.min(3.5, Math.max(0.15, pinchStart.startK * scale));
+    const r = $('stage').getBoundingClientRect();
+
+    view.k = newK;
+    view.x = midX - r.left - pinchStart.worldMid.x * newK;
+    view.y = midY - r.top - pinchStart.worldMid.y * newK;
+    applyView();
+    return;
+  }
+
+  // Single-finger drag (pan canvas or move node)
+  if (!drag) return;
+  const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+  if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true;
+  if (!drag.moved) return;
+
+  if (drag.node) {
+    const p = world(e);
+    drag.node.fx = p.x;
+    drag.node.fy = p.y;
+    run(0.25);
+  } else {
+    view.x = drag.vx + dx;
+    view.y = drag.vy + dy;
+    applyView();
+  }
+});
+
+function onPointerEnd(e) {
+  pointers.delete(e.pointerId);
+  try { svg.releasePointerCapture(e.pointerId); } catch(err) {}
+
+  if (pointers.size < 2) {
+    pinchStart = null;
+  }
+
+  if (pointers.size === 0) {
+    if (drag) {
+      if (!drag.moved) select(drag.node ? drag.node.id : null);
+      if (drag.node) {
+        drag.node.fx = null;
+        drag.node.fy = null;
+      }
+      drag = null;
+    }
+  } else if (pointers.size === 1) {
+    const [pt] = pointers.values();
+    drag = {
+      node: null,
+      sx: pt.x,
+      sy: pt.y,
+      vx: view.x,
+      vy: view.y,
+      moved: true
+    };
+  }
+}
+
+svg.addEventListener('pointerup', onPointerEnd);
+svg.addEventListener('pointercancel', onPointerEnd);
+
+// Wheel Zoom
+svg.addEventListener('wheel', e => {
+  e.preventDefault();
+  const p = world(e);
+  const factor = e.deltaY < 0 ? 1.14 : 1 / 1.14;
+  const newK = Math.min(3.5, Math.max(0.15, view.k * factor));
+  const r = $('stage').getBoundingClientRect();
+  view.k = newK;
+  view.x = e.clientX - r.left - p.x * newK;
+  view.y = e.clientY - r.top - p.y * newK;
+  applyView();
+}, { passive: false });
+
+// On-screen Zoom Buttons (+ / − / ⛶)
+function zoomBy(factor) {
+  const cx = svg.clientWidth / 2, cy = svg.clientHeight / 2;
+  const p = { x: (cx - view.x) / view.k, y: (cy - view.y) / view.k };
+  const newK = Math.min(3.5, Math.max(0.15, view.k * factor));
+  animateView(cx - p.x * newK, cy - p.y * newK, newK);
+}
+$('btn-zoom-in').onclick = () => zoomBy(1.28);
+$('btn-zoom-out').onclick = () => zoomBy(1 / 1.28);
+$('btn-zoom-fit').onclick = () => fit();
+
+// Legend Menu Visibility Toggle
+let legendVisible = localStorage.getItem('varolus_legend_open') !== null
+  ? localStorage.getItem('varolus_legend_open') === 'true'
+  : (window.innerWidth > 760);
+
+function updateLegendVisibility() {
+  const L = $('legend'), btn = $('btn-legend-toggle');
+  if (L) L.classList.toggle('collapsed', !legendVisible);
+  if (btn) btn.classList.toggle('on', legendVisible);
+}
+
+function toggleLegend() {
+  legendVisible = !legendVisible;
+  localStorage.setItem('varolus_legend_open', legendVisible);
+  updateLegendVisibility();
+}
+$('btn-legend-toggle').onclick = toggleLegend;
+
+svg.addEventListener('mouseover', e => {
+  const g = e.target.closest('.node');
+  const id = g ? g.dataset.id : null;
+  if (id !== hover) { hover = id; refresh(); }
+});
+svg.addEventListener('mouseleave', () => { hover = null; refresh(); });
+
+$('panel').addEventListener('click', e => {
+  if (e.target.closest('#close-panel-btn')) {
+    select(null);
+    return;
+  }
+  const b = e.target.closest('[data-go]');
+  if (b) select(b.dataset.go, true);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    $('q').value = ''; matches = null; groupHover = null; select(null);
+  }
+});
+
+$('q').addEventListener('input', e => {
+  const q = e.target.value.trim().toLocaleLowerCase('tr');
+  matches = q ? new Set(nodes.filter(n => (n.tr + ' ' + n.en + ' ' + n.id).toLocaleLowerCase('tr').includes(q)).map(n => n.id)) : null;
+  refresh();
+});
+$('q').addEventListener('keydown', e => { if (e.key === 'Enter' && matches && matches.size) select([...matches][0], true); });
+$('l-tr').onclick = () => setLang('tr');
+$('l-en').onclick = () => setLang('en');
+$('btn-recluster').onclick = recluster;
+$('btn-fit').onclick = fit;
+window.addEventListener('resize', fit);
+
+// ---------- text / legend ----------
+function setLang(l) {
+  lang = l; localStorage.setItem('varolus_graph_lang', l); document.documentElement.lang = l;
+  $('l-tr').classList.toggle('on', l === 'tr'); $('l-en').classList.toggle('on', l === 'en');
+  $('ttl').textContent = t().title;
+  $('q').placeholder = t().search;
+  $('reader').textContent = t().reader;
+  $('tip').textContent = t().tip;
+  $('btn-recluster').textContent = t().recluster;
+  $('btn-fit').textContent = t().fit;
+  $('btn-legend-toggle').title = t().legendToggleTitle;
+  $('legend-toggle-text').textContent = t().legendToggle;
+  $('btn-zoom-in').title = t().zoomIn;
+  $('btn-zoom-out').title = t().zoomOut;
+  $('btn-zoom-fit').title = t().zoomFit;
+  const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  $('tip').textContent = isTouch ? t().tipTouch : t().tip;
+  updateLegendVisibility();
+
+  nodes.forEach(n => { n.txt.textContent = nm(n); });
+
+  // Update badge labels with language and node counts:
+  for (const k of gKeys) {
+    const g = G.groups[k];
+    const b = badges[k];
+    if (!b) continue;
+    const count = nodes.filter(n => n.group === k).length;
+    const title = (lang === 'en' ? g.en : g.tr) + ` (${count})`;
+    b.txt.textContent = title;
+    const w = Math.max(title.length * 7.4 + 30, 85);
+    b.rect.setAttribute('x', -w / 2);
+    b.rect.setAttribute('y', -12);
+    b.rect.setAttribute('width', w);
+    b.rect.setAttribute('height', 24);
+    b.rect.style.stroke = g.color;
+    b.dot.setAttribute('cx', -w / 2 + 13);
+    b.dot.setAttribute('cy', 0);
+    b.txt.setAttribute('x', 6);
+    b.txt.setAttribute('y', 3.5);
+  }
+
+  legend(); panel();
+}
+
+function legend() {
+  const L = $('legend'); L.innerHTML = '';
+  gKeys.forEach(k => {
+    const g = G.groups[k], c = document.createElement('span');
+    c.className = 'chip' + (hiddenG.has(k) ? ' off' : '');
+    c.innerHTML = `<i style="background:${g.color}"></i>${esc(lang === 'en' ? g.en : g.tr)}`;
+    c.onmouseenter = () => { groupHover = k; refresh(); };
+    c.onmouseleave = () => { groupHover = null; refresh(); };
+    c.onclick = () => {
+      hiddenG.has(k) ? hiddenG.delete(k) : hiddenG.add(k);
+      legend(); draw(); refresh();
+    };
+    c.ondblclick = (e) => {
+      e.preventDefault();
+      focusCluster(k);
+    };
+    L.appendChild(c);
+  });
+  const s = document.createElement('span'); s.style.marginLeft = 'auto';
+  s.textContent = t().legend + ' · ' + t().stats(nodes.length, edges.length);
+  L.appendChild(s);
+}
+
+draw();
+setLang(lang);
+fit(true);
+refresh();
+
+const m = location.hash.match(/node=([\w-]+)/);
+if (m && byId[m[1]]) select(m[1], true);
+})();
+</script>
+</body>
+</html>
