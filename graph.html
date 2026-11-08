@@ -133,6 +133,10 @@ aside h3{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(
 <script src="data.js"></script>
 <script src="graph.js"></script>
 <script>
+// Arrow direction: false = arrow points to what an idea builds on (source → target);
+// true = inverted, arrow points from the foundation to the idea built on it. Visual only.
+const ARROWS_INVERTED = true;
+
 (function(){
 const D = window.BOOK_DATA, G = window.BOOK_GRAPH;
 const $ = id => document.getElementById(id);
@@ -155,7 +159,7 @@ const UI = {
     appears: 'Kitapta geçtiği yerler', mention: 'geçtiği yer', inferred: 'taslak yorum — gözden geçirilmeli',
     cross: 'bölüm atfı', stats: (n,e)=>`${n} kavram · ${e} bağlantı`,
     s: { bo: 'Dayandığı kavramlar', bi: 'Üzerine kurulanlar', eo: 'Örneği olduğu', ei: 'Örnekleri', an: 'Benzer fikirler', co: 'Karşıt kavramlar' },
-    legend: '→ dayanır / örnek · kesikli: benzer fikir · noktalı: karşıt'
+    legend: (ARROWS_INVERTED ? '→ temel olur / örneği' : '→ dayanır / örnek') + ' · kesikli: benzer fikir · noktalı: karşıt'
   },
   en: {
     title: 'Concept Map', search: 'Search concepts…', reader: '← Reader',
@@ -168,7 +172,7 @@ const UI = {
     appears: 'Where it appears', mention: 'mention', inferred: 'draft reading — needs review',
     cross: 'chapter cross-reference', stats: (n,e)=>`${n} concepts · ${e} links`,
     s: { bo: 'Builds on', bi: 'Built on by', eo: 'Is an example of', ei: 'Examples', an: 'Analogous ideas', co: 'Contrasts with' },
-    legend: '→ builds on / example · dashed: analogy · dotted: contrast'
+    legend: (ARROWS_INVERTED ? '→ built upon by / example' : '→ builds on / example') + ' · dashed: analogy · dotted: contrast'
   }
 };
 const t = () => UI[lang];
@@ -426,10 +430,18 @@ function draw() {
     const d = Math.sqrt(dx * dx + dy * dy) || 1;
     dx /= d; dy /= d;
     const arrow = e.type === 'builds-on' || e.type === 'example-of';
-    e.el.setAttribute('x1', p.x + dx * p.r);
-    e.el.setAttribute('y1', p.y + dy * p.r);
-    e.el.setAttribute('x2', q.x - dx * (q.r + (arrow ? 2 : 0)));
-    e.el.setAttribute('y2', q.y - dy * (q.r + (arrow ? 2 : 0)));
+    if (ARROWS_INVERTED && arrow) {
+      // Visual inversion only (data unchanged): arrow points from the foundation (target) to the idea built on it (source)
+      e.el.setAttribute('x1', q.x - dx * q.r);
+      e.el.setAttribute('y1', q.y - dy * q.r);
+      e.el.setAttribute('x2', p.x + dx * (p.r + 2));
+      e.el.setAttribute('y2', p.y + dy * (p.r + 2));
+    } else {
+      e.el.setAttribute('x1', p.x + dx * p.r);
+      e.el.setAttribute('y1', p.y + dy * p.r);
+      e.el.setAttribute('x2', q.x - dx * (q.r + (arrow ? 2 : 0)));
+      e.el.setAttribute('y2', q.y - dy * (q.r + (arrow ? 2 : 0)));
+    }
   }
 
   // 2. Nodes
