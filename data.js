@@ -1,17 +1,19 @@
 window.BOOK_DATA = [
   {
     "id": "00",
-    "title": "Kapak ve İçindekiler",
-    "titleEn": "Cover and Contents",
-    "subtitle": "Varoluşun Detaylı İncelemesi",
-    "subtitleEn": "A Detailed Investigation of Existence",
+    "title": "Varoluşun Detaylı İncelemesi",
+    "titleEn": "A Detailed Investigation of Existence",
+    "subtitle": "Nazım Dugan",
+    "subtitleEn": "Nazım Dugan",
     "pages": "1 - 2",
     "wordCount": 82,
     "readTime": 1,
     "paragraphs": [
-      "Varoluşun Detaylı İncelemesi Oluşum, sistemler ve diğer her şey Nazım Dugan Birinci baskı: 2020 – Hertfordshire, İngiltere Kitabın bütün hakları Nazım Dugan'a aittir. 2020 Copyright Nazım Dugan. 2020 İçindekiler Önsöz Var Olma Stratejileri Üzerine Rastgelelik ve Özgür İrade Üzerine Sistemler Üzerine Hiyerarşiler, Demokrasiler, Marketler ve Toplumlar Üzerine Ortaya Çıkış Üzerine Mümkün Olanlar ve Olmayanlar Üzerine Zamanın Yönü Üzerine Sonsuzluk Üzerine 3 Boyut Üzerine Nedenler ve Sonuçlar Üzerine Var Olmak Üzerine Farkındalık Üzerine Seçilim Üzerine Varoluş Üzerine Sonsöz Yapay Zekâ ve Gerçeklik Üzerine"
+      "Oluşum, sistemler ve diğer her şey"
     ],
-    "enParagraphs": [],
+    "enParagraphs": [
+      "Emerge, systems and everything else"
+    ],
     "concepts": []
   },
   {
