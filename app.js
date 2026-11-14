@@ -417,7 +417,7 @@
       if (gid) {
         const a = document.createElement('a');
         a.className = 'graph-link';
-        a.href = 'graph.html#node=' + gid;
+        a.href = 'graph.html#node=' + gid + '&lang=' + (isEn ? 'en' : 'tr');
         a.title = isEn ? 'Show in concept map' : 'Kavram haritasında göster';
         a.innerHTML = '<i class="fa-solid fa-diagram-project"></i>';
         a.addEventListener('click', ev => ev.stopPropagation());

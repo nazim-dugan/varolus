@@ -626,12 +626,27 @@ function panel() {
   P.scrollTop = 0;
 }
 
-function select(id, center) {
+function select(id, center, immediate) {
   selected = id; refresh(); panel();
-  history.replaceState(null, '', id ? '#node=' + id : location.pathname);
+  history.replaceState(null, '', id ? '#node=' + id + (lang ? '&lang=' + lang : '') : location.pathname);
   if (id && center) {
     const n = byId[id];
-    animateView(svg.clientWidth / 2 - n.x * view.k, svg.clientHeight / 2 - n.y * view.k, view.k);
+    if (n) {
+      const isMobile = window.innerWidth <= 760;
+      const w = svg.clientWidth || $('stage').clientWidth || (isMobile ? window.innerWidth : window.innerWidth - 340);
+      const h = svg.clientHeight || $('stage').clientHeight || (isMobile ? Math.round(window.innerHeight * 0.55) : window.innerHeight - 80);
+      const minK = isMobile ? 1.0 : 1.15;
+      const targetK = Math.min(Math.max(view.k, minK), 1.5);
+      const targetX = w / 2 - n.x * targetK;
+      const targetY = h / 2 - n.y * targetK;
+      if (immediate) {
+        if (viewAnim) cancelAnimationFrame(viewAnim);
+        view.x = targetX; view.y = targetY; view.k = targetK;
+        applyView();
+      } else {
+        animateView(targetX, targetY, targetK);
+      }
+    }
   }
 }
 
@@ -728,7 +743,7 @@ function onPointerEnd(e) {
 
   if (pointers.size === 0) {
     if (drag) {
-      if (!drag.moved) select(drag.node ? drag.node.id : null);
+      if (!drag.moved) select(drag.node ? drag.node.id : null, !!drag.node);
       if (drag.node) {
         drag.node.fx = null;
         drag.node.fy = null;
@@ -824,7 +839,13 @@ $('l-tr').onclick = () => setLang('tr');
 $('l-en').onclick = () => setLang('en');
 $('btn-recluster').onclick = recluster;
 $('btn-fit').onclick = fit;
-window.addEventListener('resize', fit);
+window.addEventListener('resize', () => {
+  if (selected && byId[selected]) {
+    select(selected, true, true);
+  } else {
+    fit();
+  }
+});
 
 // ---------- text / legend ----------
 function setLang(l) {
@@ -898,10 +919,27 @@ setLang(lang);
 fit(true);
 refresh();
 
+function applyHash() {
+  const lm = location.hash.match(/lang=(en|tr)/);
+  if (lm && lm[1] !== lang) setLang(lm[1]);
+  const m = location.hash.match(/node=([\w-]+)/);
+  if (m && byId[m[1]]) {
+    if (selected !== m[1]) select(m[1], true);
+  } else if (!m && selected) {
+    select(null);
+  }
+}
+
+window.addEventListener('hashchange', applyHash);
+
 const lm = location.hash.match(/lang=(en|tr)/);
 if (lm && lm[1] !== lang) setLang(lm[1]);
 const m = location.hash.match(/node=([\w-]+)/);
-if (m && byId[m[1]]) select(m[1], true);
+if (m && byId[m[1]]) {
+  setTimeout(() => {
+    select(m[1], true);
+  }, 50);
+}
 })();
 </script>
 </body>
