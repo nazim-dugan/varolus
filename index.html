@@ -27,11 +27,11 @@
         <div class="brand">
           <div class="brand-icon"><i class="fa-solid fa-atom"></i></div>
           <div class="brand-text">
-            <h2>Varoluşun İncelemesi</h2>
+            <h2 id="sidebar-book-title">Varoluşun İncelemesi</h2>
             <span>Nazım Dugan &bull; 2020</span>
           </div>
         </div>
-        <button id="close-sidebar-btn" class="icon-btn mobile-only" aria-label="Menüyü Kapat">
+        <button id="close-sidebar-btn" class="icon-btn mobile-only" aria-label="Menüyü Kapat" title="Menüyü Kapat">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
@@ -49,21 +49,21 @@
           <i class="fa-solid fa-book-open"></i>
           <div>
             <strong id="completed-count">0 / 16</strong>
-            <span>Tamamlandı</span>
+            <span id="stat-completed-label">Tamamlandı</span>
           </div>
         </div>
         <div class="stat-item">
           <i class="fa-solid fa-clock"></i>
           <div>
             <strong id="total-time">~65 dk</strong>
-            <span>Toplam Süre</span>
+            <span id="stat-time-label">Toplam Süre</span>
           </div>
         </div>
       </div>
 
       <!-- Chapter List -->
       <nav class="chapter-nav">
-        <div class="nav-section-label">BÖLÜMLER</div>
+        <div id="nav-section-label" class="nav-section-label">BÖLÜMLER</div>
         <ul id="chapter-list" class="chapter-list">
           <!-- Dynamically populated -->
         </ul>
@@ -72,7 +72,7 @@
       <!-- Sidebar Footer -->
       <div class="sidebar-footer">
         <button id="reset-progress-btn" class="footer-btn">
-          <i class="fa-solid fa-rotate-left"></i> Okuma İlerlemesini Sıfırla
+          <i class="fa-solid fa-rotate-left"></i> <span id="reset-progress-text">Okuma İlerlemesini Sıfırla</span>
         </button>
       </div>
     </aside>
@@ -89,7 +89,7 @@
             <i class="fa-solid fa-bars-staggered"></i>
           </button>
           <div id="breadcrumbs" class="breadcrumbs">
-            <span class="bc-book">Varoluşun Detaylı İncelemesi</span>
+            <span id="bc-book" class="bc-book">Varoluşun Detaylı İncelemesi</span>
             <i class="fa-solid fa-chevron-right bc-sep"></i>
             <span id="bc-title" class="bc-active">Yükleniyor...</span>
           </div>

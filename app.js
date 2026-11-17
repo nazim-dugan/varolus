@@ -29,14 +29,22 @@
     sidebarOverlay: document.getElementById('sidebar-overlay'),
     toggleSidebarBtn: document.getElementById('toggle-sidebar-btn'),
     closeSidebarBtn: document.getElementById('close-sidebar-btn'),
+    sidebarBookTitle: document.getElementById('sidebar-book-title'),
+    statCompletedLabel: document.getElementById('stat-completed-label'),
+    totalTime: document.getElementById('total-time'),
+    statTimeLabel: document.getElementById('stat-time-label'),
+    navSectionLabel: document.getElementById('nav-section-label'),
+    resetProgressText: document.getElementById('reset-progress-text'),
     chapterList: document.getElementById('chapter-list'),
     searchInput: document.getElementById('search-input'),
     clearSearchBtn: document.getElementById('clear-search-btn'),
     completedCount: document.getElementById('completed-count'),
     resetProgressBtn: document.getElementById('reset-progress-btn'),
-    
+
     // Top Bar
+    bcBook: document.getElementById('bc-book'),
     bcTitle: document.getElementById('bc-title'),
+    graphLinkBtn: document.getElementById('graph-link-btn'),
     ttsBtn: document.getElementById('tts-btn'),
     langSwitchWrapper: document.getElementById('lang-switch-wrapper'),
     langTrBtn: document.getElementById('lang-tr-btn'),
@@ -61,7 +69,7 @@
     artTitle: document.getElementById('art-title'),
     artSubtitle: document.getElementById('art-subtitle'),
     artBody: document.getElementById('art-body'),
-    
+
     // Concepts Pane
     conceptsPane: document.getElementById('concepts-pane'),
     conceptsList: document.getElementById('concepts-list'),
@@ -75,10 +83,72 @@
     nextTitle: document.getElementById('next-title')
   };
 
+  // --- Localized UI Strings ---
+  const UI_TEXTS = {
+    tr: {
+      bookTitleSidebar: 'Varoluşun İncelemesi',
+      bookTitleBc: 'Varoluşun Detaylı İncelemesi',
+      searchPlaceholder: 'Bölümlerde ve metinde ara...',
+      completed: 'Tamamlandı',
+      totalTime: 'Toplam Süre',
+      totalTimeValue: '~65 dk',
+      chaptersSection: 'BÖLÜMLER',
+      resetProgress: 'Okuma İlerlemesini Sıfırla',
+      resetConfirm: 'Tüm okuma ilerlemenizi sıfırlamak istediğinize emin misiniz?',
+      graphLink: 'Kavram Haritası',
+      toggleSidebar: 'Menüyü Aç/Kapat',
+      closeSidebar: 'Menüyü Kapat',
+      settingsTitle: 'Okuma Ayarları'
+    },
+    en: {
+      bookTitleSidebar: 'Investigation of Existence',
+      bookTitleBc: 'A Detailed Investigation of Existence',
+      searchPlaceholder: 'Search chapters and text...',
+      completed: 'Completed',
+      totalTime: 'Total Time',
+      totalTimeValue: '~65 min',
+      chaptersSection: 'CHAPTERS',
+      resetProgress: 'Reset Reading Progress',
+      resetConfirm: 'Are you sure you want to reset all reading progress?',
+      graphLink: 'Concept Map',
+      toggleSidebar: 'Toggle Menu',
+      closeSidebar: 'Close Menu',
+      settingsTitle: 'Reading Settings'
+    }
+  };
+
+  function updateUILanguage(lang) {
+    const isEn = lang === 'en';
+    const t = UI_TEXTS[isEn ? 'en' : 'tr'];
+    document.documentElement.lang = isEn ? 'en' : 'tr';
+
+    if (el.sidebarBookTitle) el.sidebarBookTitle.textContent = t.bookTitleSidebar;
+    if (el.bcBook) el.bcBook.textContent = t.bookTitleBc;
+    if (el.searchInput) el.searchInput.placeholder = t.searchPlaceholder;
+    if (el.statCompletedLabel) el.statCompletedLabel.textContent = t.completed;
+    if (el.totalTime) el.totalTime.textContent = t.totalTimeValue;
+    if (el.statTimeLabel) el.statTimeLabel.textContent = t.totalTime;
+    if (el.navSectionLabel) el.navSectionLabel.textContent = t.chaptersSection;
+    if (el.resetProgressText) el.resetProgressText.textContent = t.resetProgress;
+    if (el.closeSidebarBtn) {
+      el.closeSidebarBtn.setAttribute('aria-label', t.closeSidebar);
+      el.closeSidebarBtn.setAttribute('title', t.closeSidebar);
+    }
+    if (el.toggleSidebarBtn) el.toggleSidebarBtn.setAttribute('title', t.toggleSidebar);
+    if (el.toggleSettingsBtn) el.toggleSettingsBtn.setAttribute('title', t.settingsTitle);
+    if (el.graphLinkBtn) {
+      el.graphLinkBtn.setAttribute('title', t.graphLink);
+      const span = el.graphLinkBtn.querySelector('.btn-text');
+      if (span) span.textContent = t.graphLink;
+      el.graphLinkBtn.href = `graph.html#lang=${isEn ? 'en' : 'tr'}`;
+    }
+  }
+
   // --- Initialize App ---
   function init() {
     loadSettings();
     loadProgress();
+    updateUILanguage(state.currentLang);
     renderSidebarList();
     loadChapter(state.currentChapterIndex);
     setupEventListeners();
@@ -93,6 +163,10 @@
     const savedFont = localStorage.getItem('varolus_font') || 'sans';
     const savedSize = parseInt(localStorage.getItem('varolus_fontSize')) || 18;
     const savedWidth = localStorage.getItem('varolus_width') || 'standard';
+    const savedLang = localStorage.getItem('varolus_lang') || localStorage.getItem('varolus_graph_lang');
+    if (savedLang === 'en' || savedLang === 'tr') {
+      state.currentLang = savedLang;
+    }
 
     setTheme(savedTheme);
     setFont(savedFont);
@@ -164,10 +238,16 @@
   function renderSidebarList() {
     el.chapterList.innerHTML = '';
     const q = state.searchQuery.toLowerCase();
+    const isEn = state.currentLang === 'en';
 
     state.chapters.forEach((chap, idx) => {
-      const matchesTitle = chap.title.toLowerCase().includes(q) || chap.subtitle.toLowerCase().includes(q);
-      const matchesText = chap.paragraphs.some(p => p.toLowerCase().includes(q));
+      const title = (isEn && chap.titleEn) ? chap.titleEn : chap.title;
+      const subtitle = (isEn && chap.subtitleEn) ? chap.subtitleEn : chap.subtitle;
+      const paras = (isEn && chap.enParagraphs && chap.enParagraphs.length > 0) ? chap.enParagraphs : chap.paragraphs;
+
+      const matchesTitle = title.toLowerCase().includes(q) || subtitle.toLowerCase().includes(q) ||
+                           chap.title.toLowerCase().includes(q) || chap.subtitle.toLowerCase().includes(q);
+      const matchesText = paras.some(p => p.toLowerCase().includes(q));
 
       if (q && !matchesTitle && !matchesText) {
         return; // Filter out non-matching
@@ -183,8 +263,8 @@
       li.innerHTML = `
         <span class="chap-num">${chap.id}</span>
         <div class="chap-info">
-          <div class="chap-title">${escapeHTML(chap.title)}</div>
-          <div class="chap-sub">${escapeHTML(chap.subtitle)}</div>
+          <div class="chap-title">${escapeHTML(title)}</div>
+          <div class="chap-sub">${escapeHTML(subtitle)}</div>
         </div>
         <div class="chap-status">
           <i class="${isCompleted ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'}"></i>
@@ -192,7 +272,6 @@
       `;
 
       li.addEventListener('click', () => {
-        state.currentLang = 'tr'; // Reset to Turkish on chapter change
         loadChapter(idx);
         closeMobileSidebar();
       });
@@ -210,7 +289,7 @@
   // --- Render Chapter Content ---
   function loadChapter(index) {
     if (index < 0 || index >= state.chapters.length) return;
-    
+
     stopTTS(); // Stop any speech synthesis if playing
 
     state.currentChapterIndex = index;
@@ -231,6 +310,9 @@
     }
 
     const isEn = state.currentLang === 'en' && hasEN;
+
+    // Update UI language (sidebar, breadcrumbs, buttons, etc.)
+    updateUILanguage(isEn ? 'en' : 'tr');
 
     // Update Header Badges & Breadcrumb
     el.bcTitle.textContent = isEn ? (chap.titleEn || chap.title) : chap.title;
@@ -254,7 +336,7 @@
 
     // Body Paragraphs
     const parasToRender = isEn ? chap.enParagraphs : chap.paragraphs;
-    
+
     el.artBody.innerHTML = '';
     const q = state.searchQuery.trim();
     let bookmarksByPara = {};
@@ -308,11 +390,23 @@
   function openFromHash() {
     const h = new URLSearchParams(location.hash.slice(1));
     const ch = h.get('ch');
-    if (!ch) return;
+    const lang = h.get('lang');
+    if (lang === 'en' || lang === 'tr') {
+      state.currentLang = lang;
+      localStorage.setItem('varolus_lang', lang);
+      localStorage.setItem('varolus_graph_lang', lang);
+    }
+    if (!ch) {
+      if (lang) {
+        updateUILanguage(state.currentLang);
+        renderSidebarList();
+        loadChapter(state.currentChapterIndex);
+      }
+      return;
+    }
     const idx = state.chapters.findIndex(c => String(c.id) === ch);
     if (idx < 0) return;
     loadChapter(idx);
-    if (h.get('lang') === 'en' && el.langEnBtn && !el.langEnBtn.closest('.hidden')) el.langEnBtn.click();
     const p = h.get('p');
     if (p !== null) setTimeout(() => {
       const t = document.getElementById('para-' + p);
@@ -459,7 +553,7 @@
     const isEn = state.currentLang === 'en';
     const chap = state.chapters[state.currentChapterIndex];
     const isDone = state.completedChapters.has(chap.id);
-    
+
     if (isDone) {
       el.markCompleteBtn.classList.add('completed');
       el.markCompleteBtn.querySelector('span').textContent = isEn ? 'Marked as Read' : 'Okundu Olarak İşaretlendi';
@@ -476,13 +570,17 @@
     const prevIdx = state.currentChapterIndex - 1;
     const nextIdx = state.currentChapterIndex + 1;
 
-    const prevDirection = el.prevChapterBtn.querySelector('.nav-direction');
+    const prevDirection = el.prevChapterBtn.querySelector('.nav-dir') || el.prevChapterBtn.querySelector('.nav-direction');
     if (prevDirection) {
-      prevDirection.textContent = isEn ? 'Previous Chapter' : 'Önceki Bölüm';
+      prevDirection.innerHTML = isEn
+        ? '<i class="fa-solid fa-arrow-left"></i> Previous Chapter'
+        : '<i class="fa-solid fa-arrow-left"></i> Önceki Bölüm';
     }
-    const nextDirection = el.nextChapterBtn.querySelector('.nav-direction');
+    const nextDirection = el.nextChapterBtn.querySelector('.nav-dir') || el.nextChapterBtn.querySelector('.nav-direction');
     if (nextDirection) {
-      nextDirection.textContent = isEn ? 'Next Chapter' : 'Sonraki Bölüm';
+      nextDirection.innerHTML = isEn
+        ? 'Next Chapter <i class="fa-solid fa-arrow-right"></i>'
+        : 'Sonraki Bölüm <i class="fa-solid fa-arrow-right"></i>';
     }
 
     if (prevIdx >= 0) {
@@ -511,18 +609,22 @@
 
   function startTTS() {
     if (!state.speechSynth) {
-      alert("Tarayıcınız sesli okuma özelliğini desteklemiyor.");
+      alert(state.currentLang === 'en'
+        ? "Your browser does not support text-to-speech."
+        : "Tarayıcınız sesli okuma özelliğini desteklemiyor.");
       return;
     }
 
     stopTTS();
 
     const chap = state.chapters[state.currentChapterIndex];
-    const paras = (state.currentLang === 'en' && chap.enParagraphs.length > 0) ? chap.enParagraphs : chap.paragraphs;
-    const fullText = chap.title + '. ' + paras.join(' ');
+    const isEn = state.currentLang === 'en' && chap.enParagraphs && chap.enParagraphs.length > 0;
+    const paras = isEn ? chap.enParagraphs : chap.paragraphs;
+    const title = (isEn && chap.titleEn) ? chap.titleEn : chap.title;
+    const fullText = title + '. ' + paras.join(' ');
 
     state.utterance = new SpeechSynthesisUtterance(fullText);
-    state.utterance.lang = state.currentLang === 'en' ? 'en-US' : 'tr-TR';
+    state.utterance.lang = isEn ? 'en-US' : 'tr-TR';
     state.utterance.rate = 1.0;
 
     state.utterance.onend = () => {
@@ -577,7 +679,11 @@
 
     // Reset Progress Button
     el.resetProgressBtn.addEventListener('click', () => {
-      if (confirm('Tüm okuma ilerlemenizi sıfırlamak istediğinize emin misiniz?')) {
+      const isEn = state.currentLang === 'en';
+      const msg = isEn
+        ? 'Are you sure you want to reset all reading progress?'
+        : 'Tüm okuma ilerlemenizi sıfırlamak istediğinize emin misiniz?';
+      if (confirm(msg)) {
         state.completedChapters.clear();
         saveProgress();
         renderSidebarList();
@@ -611,11 +717,15 @@
     // Language Switcher
     el.langTrBtn.addEventListener('click', () => {
       state.currentLang = 'tr';
+      localStorage.setItem('varolus_lang', 'tr');
+      localStorage.setItem('varolus_graph_lang', 'tr');
       loadChapter(state.currentChapterIndex);
     });
 
     el.langEnBtn.addEventListener('click', () => {
       state.currentLang = 'en';
+      localStorage.setItem('varolus_lang', 'en');
+      localStorage.setItem('varolus_graph_lang', 'en');
       loadChapter(state.currentChapterIndex);
     });
 
@@ -637,27 +747,23 @@
 
     // Bottom Navigation Cards
     el.prevChapterBtn.addEventListener('click', () => {
-      state.currentLang = 'tr';
       loadChapter(state.currentChapterIndex - 1);
     });
 
     el.nextChapterBtn.addEventListener('click', () => {
-      state.currentLang = 'tr';
       loadChapter(state.currentChapterIndex + 1);
     });
 
     // Keyboard Shortcuts (Left / Right Arrows)
     document.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      
+
       if (e.key === 'ArrowLeft') {
         if (state.currentChapterIndex > 0) {
-          state.currentLang = 'tr';
           loadChapter(state.currentChapterIndex - 1);
         }
       } else if (e.key === 'ArrowRight') {
         if (state.currentChapterIndex < state.chapters.length - 1) {
-          state.currentLang = 'tr';
           loadChapter(state.currentChapterIndex + 1);
         }
       } else if (e.key.toLowerCase() === 'z' && e.altKey) {
